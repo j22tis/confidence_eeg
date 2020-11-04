@@ -372,6 +372,8 @@ med_ERN <- isolate(d = d1,
         value = c("ERN_FzCz","confidence"))
 
 med_ERN$difficulty = as.numeric(as.factor(med_ERN$difficulty))
+
+med_ERN$fluency = as.numeric(as.factor(med_ERN$fluency))
                                
                                
 # fit 
@@ -392,7 +394,7 @@ fit1 <- mlm(d=med_ERN,
 
 
 # summary
-mlm_summary(fit1)                              # dependent variable
+mlm_summary(fit1)               
 
 # path plot
 mlm_path_plot(fit1, xlab = "Difficulty", mlab = "ERN", ylab = "Confidence")
@@ -406,7 +408,6 @@ Does pooled ERN mediate the effect of fluency on confidence?
 
 
 ```{r}
-med_ERN$fluency = as.numeric(as.factor(med_ERN$fluency))
 
 fit2 <- mlm(d=med_ERN,
            id = "participant",          # subject variable
@@ -442,16 +443,14 @@ fit3 <- mlm(d=easy_ERN,
            x = "fluency",            # experimental condition
            m = "ERN_FzCz_cw",                  # mediator
            y = "confidence_cw",
-           iter = 15000,
+           iter = 10000,
            cores = 4)
-?mlm()
+
 pars <- c("a", "b", "cp", "corrab")
 
 mlm_path_plot(fit3, xlab = "Fluency", mlab = "Pooled ERN", ylab = "Confidence")
 
 mlm_pars_plot(fit3, pars = c("u_b"), type = "coef", level = .95)
-
-
 
 
 ```
@@ -463,11 +462,10 @@ mlm_pars_plot(fit3, pars = c("u_b"), type = "coef", level = .95)
 Difficulty mediation for error & correct trials
 ```{r}
 
-
 ERN_error = med_ERN %>% filter(response == "error")
 
                              
-                               
+                              
 # fit difficulty mediation model
 
 fit4 <- mlm(d= ERN_error,
@@ -475,7 +473,7 @@ fit4 <- mlm(d= ERN_error,
            x = "difficulty",            # experimental condition
            m = "ERN_FzCz_cw",                  # mediator
            y = "confidence_cw",
-           iter = 4000,
+           iter = 10000,
            cores = 4)                             
 
 
@@ -493,8 +491,6 @@ mlm_path_plot(fit4, xlab = "Difficulty", mlab = "ERN", ylab = "Confidence")
 
 ERN_correct = med_ERN %>% filter(response == "correct")
 
-                              
-                               
 # fit difficulty mediation model
 
 fit5 <- mlm(d=ERN_correct,
@@ -504,7 +500,6 @@ fit5 <- mlm(d=ERN_correct,
            y = "confidence_cw",
            iter = 10000,
            cores = 4)                             
-
 
 
 # summary
@@ -519,16 +514,9 @@ mlm_path_plot(fit5, xlab = "Difficulty", mlab = "ERN", ylab = "Confidence")
 Fluency mediation model for error & correct
 ```{r}
 
-# fluency & ERN mediation model for error trials
-mefluERN <- isolate(d = d2,
-        by = "participant",   # level variable
-        value = c("confidence","ERN")) # siia ei saa conf panna, kuna siis p3 läheb NAks. 
-
-
-mefluERN$fluency = as.numeric(as.factor(mefluERN$fluency))
 # select only error responses
 
-flu_error = mefluERN %>% filter(response == "error")
+flu_error = med_ERN %>% filter(response == "error")
 
                                
                                
@@ -539,7 +527,7 @@ fit_flu_error <- mlm(d=flu_error,
            x = "fluency",            # experimental condition
            m = "ERN_cw",                  # mediator
            y = "confidence_cw",
-           iter = 8000,
+           iter = 10000,
            cores = 4)                             
 
 
@@ -548,23 +536,22 @@ fit_flu_error <- mlm(d=flu_error,
 mlm_summary(fit_flu_error)                              # dependent variable
 
 # path plot
-mlm_path_plot(fit_flu_error, xlab = "Fluency", mlab = "ERN", ylab = "Confidence")
+mlm_path_plot(fit_flu_error, xlab = "Fluency", mlab = "Pooled ERN", ylab = "Confidence")
 
 
 # correct, fluency ERN
 
-flu_correct = mefluERN %>% filter(response == "correct")
+flu_correct = med_ERN %>% filter(response == "correct")
 
                                
-                               
-# fit fluency-error mediation model
+# fit fluency mediation model for correct trials
 
 fit_flu_correct <- mlm(d=flu_correct,
            id = "participant",          # subject variable
            x = "fluency",            # experimental condition
            m = "ERN_cw",                  # mediator
            y = "confidence_cw",
-           iter = 8000,
+           iter = 10000,
            cores = 4)                             
 
 
@@ -573,7 +560,7 @@ fit_flu_correct <- mlm(d=flu_correct,
 mlm_summary(fit_flu_correct)                              # dependent variable
 
 # path plot
-mlm_path_plot(fit_flu_correct, xlab = "Fluency", mlab = "ERN", ylab = "Confidence")
+mlm_path_plot(fit_flu_correct, xlab = "Fluency", mlab = "Pooled ERN", ylab = "Confidence")
 
 
 ```
