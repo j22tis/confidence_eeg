@@ -34,10 +34,10 @@ library(bayesplot)
 # import data
 # ERN & pe dataset
 
-d1 <- read_csv("data/31-Oct-2020-ERN_PE_export.csv")
+d1 <- read_csv("data/04-Nov-2020-ERN_PE_export.csv")
   
 # P3 dataset
-d2 <- read_csv("data/31-Oct-2020-P3export.csv")
+d2 <- read_csv("data/04-Nov-2020-P3export.csv")
 
 # remove variables with NA-s in confidence
 
@@ -68,7 +68,8 @@ summary(d1$confidence)
 summary(d2$confidence)
 
 # participants
-d1 %>% group_by(participant) %>% summarize(n())
+d1 %>% group_by(Subject) %>% summarize(n())
+d2 %>% group_by(Subject) %>% summarize(n())
 
 ```
 
@@ -92,8 +93,9 @@ summary(trialtable2$trialcount)
 # logistic regression mixed model regression for accuracy
 
 
-fit_acc = glmer(response ~ fluency*difficulty + (fluency:difficulty | participant), family=binomial, data=d1) 
-
+#fit_acc = glmer(response ~ fluency*difficulty + (fluency:difficulty | participant), family=binomial, data=d1) 
+#save(fit_acc, file="analysis/fit_acc.rData")
+load("analysis/fit_acc.rData")
 summary(fit_acc)
 
 # accuracy effect
@@ -124,14 +126,13 @@ plot1
 
 # Effects of manipulations on RTs
 
-fit1 = ezANOVA(data = table_sum,
+fit_rt = ezANOVA(data = table_sum,
 													dv = .(Mean_response_time), 
 													wid = .(participant),
 													within = .(fluency,difficulty),
 													detailed = TRUE,
                           return_aov = T)
-print(fit1)
-apa.ezANOVA.table(fit1)
+apa.ezANOVA.table(fit_rt)
 
 
 plot2 = ggplot(table_sum, aes(y = Mean_response_time, x = difficulty, fill=fluency, color = fluency)) +
@@ -149,7 +150,7 @@ plot2
 
 
 
-## effects on confidence ### 
+## manipulation effects on confidence ### 
 
 fit2 = ezANOVA(data = table_sum,
 													dv = .(Mean_confidence), 
@@ -158,16 +159,15 @@ fit2 = ezANOVA(data = table_sum,
 													detailed = TRUE,
                           return_aov = T)
 
-print(fit2)
+
 apa.ezANOVA.table(fit2)
 
-# mixed model forconfidence
+# mixed model 
+
+fit_confidence = lmer(Mean_confidence ~ difficulty*fluency + (1|participant), data=table_sum)
 
 
-fitc = lmer(Mean_confidence ~ difficulty*fluency + (1|participant), data=table_sum)
-anova(fitc)
-
-summary(fitc)
+summary(fit_confidence)
 
 
 # plot3 
@@ -204,21 +204,17 @@ Mixed effect models - effects of task manipulations on Pe, ERN and P3
 ```{r}
 
 
-# ERN 
+# effect of manipulations on ERN 
 fit_ern <- lmer(ERN_FzCz ~ difficulty * fluency + (1|participant), data=d1)
 summary(fit_ern)
 
-## interaction plot
+## CI function
 mean_ci = function(x) {
 	ci = qt(0.975,df=length(x)-1)*sd(x)/sqrt(length(x))
 	return(data.frame(y = mean(x), ymin = mean(x) - ci, ymax = mean(x) + ci))
 }
 
-#plotd = d %>% group_by(participant, difficulty, fluency) %>%
-#summarise("Mean pooled ERN"= mean(ERN70_60_Fz, na.tm=T),
-#"Mean pooled Pe"= mean(Pe200_300_Cz, na.tm=T))
-          
-
+# interaction plot       
 ern_plot = ggplot(d1, aes(y = ERN_FzCz, x = as.factor(difficulty), fill= as.factor(fluency), color = as.factor(fluency))) +
   stat_summary(fun.data = "mean_ci", position = position_dodge(0.1), geom = "errorbar", size = 1, width = 0.2, alpha = 0.3) +
   scale_y_continuous() +
@@ -302,7 +298,7 @@ Correlation analysis for confidence and ERPs
 
 ```{r}
 options(scipen=9999)
-# ern & confidence (0.06, significant)
+# ern & confidence (0.05, significant)
 rmc1 <- rmcorr(participant = participant, measure1 = confidence, measure2 = ERN_FzCz , dataset = d1)
 rmc1
 plot(rmc1, d, overall = F, lty = 2, xlab = "Confidence", ylab = "ERN")
@@ -312,7 +308,7 @@ rmc2 <- rmcorr(participant = participant, measure1 = confidence, measure2 = Pe_P
 rmc2
 plot(rmc2, d, overall = F, lty = 2, xlab = "Confidence", ylab = "Pe")
 
-# P3 & confidence (-0.005, nonsignificant)
+# P3 & confidence (-0.006, nonsignificant)
 rmc3 <- rmcorr(participant = participant, measure1 = confidence, measure2 = P3_Pz , dataset = d2)
 rmc3
 plot(rmc3, d, overall = F, lty = 2, xlab = "Confidence", ylab = "P3")
@@ -345,7 +341,7 @@ d1 %>% filter(response == "error") %>% rmcorr(participant = participant, measure
 # error trials & Pe (ns corr)
 d1 %>% filter(response == "error") %>% rmcorr(participant = participant, measure1 = confidence, measure2 = Pe_PzCz)
 
-# correct trials and ERN (biggest correlation - 0.07, significant)
+# correct trials and ERN (correlation - 0.06, significant)
 
 d1 %>% filter(response == "correct") %>% rmcorr(participant = participant, measure1 = confidence, measure2 = ERN_FzCz) 
 # correct trias and Pe
